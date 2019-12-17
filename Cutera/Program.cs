@@ -44,10 +44,11 @@ namespace Cutera
                 Console.WriteLine("Please make sure none of the mentioned files is open or being used by another process!");
                 Console.ForegroundColor = ConsoleColor.White;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 Console.ForegroundColor = ConsoleColor.DarkRed;
-                Console.WriteLine("Unexpected Error Occured!");
+                Console.WriteLine("Unexpected Error Occured! Check debug file for more details.");
+                File.WriteAllText("debug.txt", "Message=" + ex.Message + @"\nStackTrace=" + ex.StackTrace);
                 Console.ForegroundColor = ConsoleColor.White;
             }
             Console.WriteLine("Press any key to exit");

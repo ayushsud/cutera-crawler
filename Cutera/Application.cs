@@ -16,7 +16,7 @@ namespace Cutera
             var geoCodeProvider = new GeocoderGeocodeProvider();
             using (StreamWriter writer = File.CreateText(outputFileName + ".csv"))
             {
-                writer.WriteLine("Name,Street,Address,State,ZipCode,Country,Website,Phone");
+                writer.WriteLine("Name,Address,City,State,ZipCode,Country,Website,Phone");
                 List<Task> tasks = new List<Task>();
                 foreach (var zipCode in zipCodes)
                 {
