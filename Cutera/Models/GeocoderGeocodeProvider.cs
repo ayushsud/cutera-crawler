@@ -14,16 +14,24 @@ namespace Cutera
 
         public async Task<Geocode> GetGeoCode(string zipCode, string country = null)
         {
-            var response = await HttpHelper.GETHttpResponse<GeocoderResponse>(baseURL + zipCode, false);
-            if (!string.IsNullOrWhiteSpace(response.Error?.Message))
+            try
+            {
+                var response = await HttpHelper.GETHttpResponse<GeocoderResponse>(baseURL + zipCode, false);
+                if (response == null || !string.IsNullOrWhiteSpace(response.Error?.Message))
+                {
+                    throw new GeocodeException();
+                }
+                return new Geocode()
+                {
+                    Latitude = response.Latt,
+                    Longitude = response.Longt
+                };
+            }
+            catch
             {
                 throw new GeocodeException();
             }
-            return new Geocode()
-            {
-                Latitude = response.Latt,
-                Longitude = response.Longt
-            };
+
         }
     }
 }
