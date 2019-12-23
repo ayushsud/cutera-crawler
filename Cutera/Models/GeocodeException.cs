@@ -6,5 +6,6 @@ namespace Cutera
 {
     public class GeocodeException : Exception
     {
+        public GeocodeException(string message) : base(message) { }
     }
 }

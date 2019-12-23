@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Diagnostics;
 using System.IO;
 
@@ -9,6 +10,7 @@ namespace Cutera
         static void Main(string[] args)
         {
             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+            var application = new Application();
             Console.Title = "Cutera";
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine("Enter input file name for zip codes to be checked(including extension)");
@@ -21,15 +23,16 @@ namespace Cutera
             Console.ForegroundColor = ConsoleColor.White;
             try
             {
-                new Application().Run(inputFileName, outputFileName).GetAwaiter().GetResult();
+                application.Run(inputFileName, outputFileName).GetAwaiter().GetResult();
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("Done!");
                 Console.ForegroundColor = ConsoleColor.White;
             }
-            catch (GeocodeException)
+            catch (GeocodeException ex)
             {
                 Console.ForegroundColor = ConsoleColor.DarkRed;
                 Console.WriteLine("Geocode API failed!");
+                Console.WriteLine("Geocode=" + ex.Message);
                 Console.ForegroundColor = ConsoleColor.White;
             }
             catch (FileNotFoundException)
@@ -51,6 +54,9 @@ namespace Cutera
                 File.WriteAllText("debug.txt", "Message=" + ex.Message + @"\nStackTrace=" + ex.StackTrace);
                 Console.ForegroundColor = ConsoleColor.White;
             }
+            string successFile="success.txt";
+            File.WriteAllText(successFile, JsonConvert.SerializeObject(application.processedZipcodes));
+            Console.WriteLine("All successfully processed zipcodes saved to " + successFile);
             Console.WriteLine("Press any key to exit");
             Console.ForegroundColor = ConsoleColor.White;
             Console.ReadKey();

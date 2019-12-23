@@ -19,7 +19,7 @@ namespace Cutera
                 var response = await HttpHelper.GETHttpResponse<GeocoderResponse>(baseURL + zipCode, false);
                 if (response == null || !string.IsNullOrWhiteSpace(response.Error?.Message))
                 {
-                    throw new GeocodeException();
+                    throw new Exception();
                 }
                 return new Geocode()
                 {
@@ -29,7 +29,7 @@ namespace Cutera
             }
             catch
             {
-                throw new GeocodeException();
+                throw new GeocodeException(zipCode);
             }
 
         }

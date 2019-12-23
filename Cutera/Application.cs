@@ -10,6 +10,7 @@ namespace Cutera
 {
     public class Application
     {
+        public List<string> processedZipcodes = new List<string>();
         public async Task Run(string inputFileName, string outputFileName)
         {
             var zipCodes = GetZipCodesFromFile(inputFileName);
@@ -30,6 +31,7 @@ namespace Cutera
                             {
                                 WriteToFile(providers, writer);
                             }
+                            processedZipcodes.Add(zipCode);
                         }
                     }));
                     await Task.Delay(700);
