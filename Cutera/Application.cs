@@ -1,7 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using ExcelDataReader;
 using HtmlAgilityPack;
@@ -15,40 +19,40 @@ namespace Cutera
         {
             var zipCodes = GetZipCodesFromFile(inputFileName);
             var geoCodeProvider = new GeocoderGeocodeProvider();
-            using (StreamWriter writer = File.CreateText(outputFileName + ".csv"))
+            var cancellationTokenSource = new CancellationTokenSource();
+            List<Task> tasks = new List<Task>();
+            using (StreamWriter writer = new StreamWriter(outputFileName + ".csv", false, Encoding.UTF8, 65536))
             {
                 writer.WriteLine("Name,Address,City,State,ZipCode,Country,Website,Phone");
-                List<Task> tasks = new List<Task>();
                 foreach (var zipCode in zipCodes)
                 {
                     tasks.Add(Task.Run(async () =>
                     {
-                        var geocode = await geoCodeProvider.GetGeoCode(zipCode);
-                        if (!string.IsNullOrWhiteSpace(geocode.Latitude) && !string.IsNullOrWhiteSpace(geocode.Longitude))
-                        {
-                            var providers = await GetProviders(zipCode, geocode);
-                            lock (providers)
-                            {
-                                WriteToFile(providers, writer);
-                            }
-                            processedZipcodes.Add(zipCode);
-                        }
-                    }));
+                        var geocode = await geoCodeProvider.GetGeoCode(zipCode, cancellationTokenSource);
+                        var providers = await GetProviders(zipCode, geocode);
+                        var inputs = await GetFileInput(providers);
+                        if (!cancellationTokenSource.IsCancellationRequested && inputs != null)
+                            writer.WriteLine(inputs.ToString());
+                        processedZipcodes.Add(zipCode);
+                    }, cancellationTokenSource.Token));
+                    if (cancellationTokenSource.IsCancellationRequested)
+                        break;
                     await Task.Delay(700);
                 }
-                await Task.WhenAll(tasks);
             }
+            await Task.WhenAll(tasks);
         }
 
-        public void WriteToFile(string htmlData, StreamWriter writer)
+        public ValueTask<StringBuilder> GetFileInput(string htmlData)
         {
             if (htmlData == null)
-                return;
+                return new ValueTask<StringBuilder>();
             HtmlDocument doc = new HtmlDocument();
             doc.LoadHtml(htmlData);
             var results = doc.DocumentNode.SelectNodes("//div[@class='physician-office text-center']");
             if (results == null)
-                return;
+                return new ValueTask<StringBuilder>();
+            var builder = new StringBuilder();
             foreach (var element in results)
             {
                 try
@@ -77,10 +81,11 @@ namespace Cutera
                         phone = Regex.Replace(phone, @"\t|\n|\r", " ").Trim();
                         phone = Regex.Replace(phone, @"[ ]{2,}", " ").Trim();
                     }
-                    writer.WriteLine(name?.Replace(',', ' ') + "," + street?.Replace(',', ' ') + "," + address?.Replace(',', ' ') + "," + state?.Replace(',', ' ') + "," + zipCode?.Replace(',', ' ') + "," + country?.Replace(',', ' ') + "," + website?.Replace(',', ' ') + "," + phone);
+                    builder.AppendLine(name?.Replace(',', ' ') + "," + street?.Replace(',', ' ') + "," + address?.Replace(',', ' ') + "," + state?.Replace(',', ' ') + "," + zipCode?.Replace(',', ' ') + "," + country?.Replace(',', ' ') + "," + website?.Replace(',', ' ') + "," + phone);
                 }
                 catch { }
             }
+            return new ValueTask<StringBuilder>(builder);
         }
 
         private List<string> GetZipCodesFromFile(string inputFileName)

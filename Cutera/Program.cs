@@ -51,10 +51,10 @@ namespace Cutera
             {
                 Console.ForegroundColor = ConsoleColor.DarkRed;
                 Console.WriteLine("Unexpected Error Occured! Check debug file for more details.");
-                File.WriteAllText("debug.txt", "Message=" + ex.Message + @"\nStackTrace=" + ex.StackTrace);
+                File.WriteAllText("debug.txt", "Type=" + ex.GetType().ToString() + Environment.NewLine + "Message=" + ex.Message + Environment.NewLine + "StackTrace=" + ex.StackTrace);
                 Console.ForegroundColor = ConsoleColor.White;
             }
-            string successFile="success.txt";
+            string successFile = "success.txt";
             File.WriteAllText(successFile, JsonConvert.SerializeObject(application.processedZipcodes));
             Console.WriteLine("All successfully processed zipcodes saved to " + successFile);
             Console.WriteLine("Press any key to exit");
