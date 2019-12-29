@@ -15,32 +15,36 @@ namespace Cutera
     public class Application
     {
         public List<string> processedZipcodes = new List<string>();
+        public List<string> zipCodes = new List<string>();
         public async Task Run(string inputFileName, string outputFileName)
         {
-            var zipCodes = GetZipCodesFromFile(inputFileName);
+            zipCodes = GetZipCodesFromFile(inputFileName);
             var geoCodeProvider = new GeocoderGeocodeProvider();
             var cancellationTokenSource = new CancellationTokenSource();
-            List<Task> tasks = new List<Task>();
             using (StreamWriter writer = new StreamWriter(outputFileName + ".csv", false, Encoding.UTF8, 65536))
             {
+                List<Task> tasks = new List<Task>();
                 writer.WriteLine("Name,Address,City,State,ZipCode,Country,Website,Phone");
                 foreach (var zipCode in zipCodes)
                 {
                     tasks.Add(Task.Run(async () =>
                     {
                         var geocode = await geoCodeProvider.GetGeoCode(zipCode, cancellationTokenSource);
-                        var providers = await GetProviders(zipCode, geocode);
-                        var inputs = await GetFileInput(providers);
-                        if (!cancellationTokenSource.IsCancellationRequested && inputs != null)
-                            writer.WriteLine(inputs.ToString());
+                        if (!string.IsNullOrWhiteSpace(geocode.Latitude) && !string.IsNullOrWhiteSpace(geocode.Longitude))
+                        {
+                            var providers = await GetProviders(zipCode, geocode);
+                            var inputs = await GetFileInput(providers);
+                            if (!string.IsNullOrWhiteSpace(inputs?.ToString()))
+                                writer.WriteLine(inputs.ToString());
+                        }
                         processedZipcodes.Add(zipCode);
                     }, cancellationTokenSource.Token));
                     if (cancellationTokenSource.IsCancellationRequested)
                         break;
                     await Task.Delay(700);
                 }
+                await Task.WhenAll(tasks);
             }
-            await Task.WhenAll(tasks);
         }
 
         public ValueTask<StringBuilder> GetFileInput(string htmlData)

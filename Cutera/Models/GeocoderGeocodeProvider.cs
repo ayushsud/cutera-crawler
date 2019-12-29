@@ -19,8 +19,8 @@ namespace Cutera
             {
                 var response = await HttpHelper.GETHttpResponse<GeocoderResponse>(baseURL + zipCode, false);
                 if (response == null ||
-                    string.IsNullOrWhiteSpace(response.Latt) ||
-                    string.IsNullOrWhiteSpace(response.Longt))
+                    (!string.IsNullOrWhiteSpace(response.Error?.Message)
+                    && response.Error.Message.Contains("Request Throttled")))
                 {
                     throw new Exception();
                 }

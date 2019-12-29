@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 
 namespace Cutera
 {
@@ -54,9 +55,8 @@ namespace Cutera
                 File.WriteAllText("debug.txt", "Type=" + ex.GetType().ToString() + Environment.NewLine + "Message=" + ex.Message + Environment.NewLine + "StackTrace=" + ex.StackTrace);
                 Console.ForegroundColor = ConsoleColor.White;
             }
-            string successFile = "success.txt";
-            File.WriteAllText(successFile, JsonConvert.SerializeObject(application.processedZipcodes));
-            Console.WriteLine("All successfully processed zipcodes saved to " + successFile);
+            var remainingZipCodes = application.zipCodes.Except(application.processedZipcodes);
+            File.WriteAllText("RemainingZipCodes.csv", string.Join(",", remainingZipCodes.ToArray()));
             Console.WriteLine("Press any key to exit");
             Console.ForegroundColor = ConsoleColor.White;
             Console.ReadKey();
